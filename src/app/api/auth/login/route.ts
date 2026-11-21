@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server"; import {db} from "@/lib/db"; import bcrypt from "bcryptjs";
+export async function POST(req:Request){try{const {phone,password}=await req.json();const user=await db.user.findUnique({where:{phone}});if(!user||!(await bcrypt.compare(password,user.password)))return NextResponse.json({success:false,error:"Invalid credentials"},{status:401});return NextResponse.json({success:true,user:{id:user.id,phone:user.phone,name:user.name,playerId:user.playerId}});}catch(e:any){return NextResponse.json({success:false,error:e.message},{status:500})}}

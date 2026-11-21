@@ -1,0 +1,5 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { GSC_OPERATOR_CODE } from "@/lib/gsc/config";
+import { gscSign, verifySignature } from "@/lib/gsc/signature";
+export async function POST(req: NextRequest) { try { const body=await req.json(); const rt=String(body.request_time||""); if(body.operator_code!==GSC_OPERATOR_CODE||!verifySignature(gscSign(rt,"getbalance",GSC_OPERATOR_CODE),body.sign)) return NextResponse.json({code:1004,message:"Invalid signature"}); const data=[]; for(const x of body.batch_requests||[]){const u=await db.user.findFirst({where:{OR:[{phone:x.member_account},{playerId:x.member_account}]},select:{wallet:{select:{balance:true}}}}); data.push(u?{member_account:x.member_account,product_code:x.product_code,balance:Number(u.wallet?.balance||0),code:0,message:""}:{member_account:x.member_account,product_code:x.product_code,balance:0,code:1000,message:"Member does not exist"});} return NextResponse.json({data}); } catch(e:any){return NextResponse.json({data:[],code:999,message:e.message},{status:200});}}
